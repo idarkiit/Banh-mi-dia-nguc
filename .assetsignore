@@ -1,0 +1,10 @@
+# Những file KHÔNG đưa lên Cloudflare (chỉ phục vụ index.html cho người chơi)
+.git
+.github
+.wrangler
+node_modules
+.DS_Store
+.assetsignore
+.nojekyll
+wrangler.jsonc
+README.md
