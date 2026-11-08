@@ -148,6 +148,21 @@ table.sum td:last-child{text-align:right;font-weight:800}
 .buy{margin-top:6px;width:100%;background:var(--gold);color:#2b1320;border-radius:10px;padding:4px;font-weight:800;font-size:14px;box-shadow:0 3px 0 #a07a1a}
 .buy:disabled{opacity:.35;cursor:not-allowed}
 .owned{margin-top:6px;color:var(--good);font-weight:800;font-size:14px}
+/* Nâng cấp xe: khung xem trước 3D + thẻ đẹp hơn */
+.cartpv{position:relative;height:clamp(160px,32vh,250px);border-radius:16px;overflow:hidden;margin:4px 0 10px;border:2px solid var(--line);
+  background:radial-gradient(ellipse at 50% 88%,#7a2430 0%,#34101e 55%,#14060d 100%)}
+.cartpv canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.pvcap{position:absolute;left:8px;right:8px;bottom:6px;text-align:center;font-size:13.5px;font-weight:800;color:var(--ink);text-shadow:0 1px 4px #000;pointer-events:none}
+.pvtag{position:absolute;top:8px;left:8px;background:var(--gold);color:#2b1320;font-weight:800;font-size:12px;padding:2px 9px;border-radius:99px;pointer-events:none}
+.pvtag.own{background:var(--good)}
+.item.upg{cursor:pointer;position:relative;background:linear-gradient(160deg,rgba(255,207,74,.10),rgba(0,0,0,.32) 60%);transition:transform .15s,border-color .15s,box-shadow .15s}
+.item.upg:hover{transform:translateY(-2px)}
+.item.upg.sel{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,207,74,.25),0 6px 18px rgba(255,150,40,.28)}
+.item.upg b{width:50px;height:50px;display:grid;place-items:center;border-radius:50%;margin-bottom:2px;
+  background:radial-gradient(circle at 35% 30%,#8a2e40,#2a0d18);box-shadow:inset 0 0 0 2px rgba(255,207,74,.4),0 3px 8px rgba(0,0,0,.4)}
+.item.upg .pr{position:absolute;top:6px;right:6px;font-size:11.5px;font-weight:800;color:var(--gold)}
+.undo{margin-top:5px;width:100%;background:rgba(0,0,0,.25);border:1.5px solid rgba(255,246,230,.4);color:var(--ink);border-radius:10px;padding:3px 4px;font-weight:700;font-size:12.5px}
+.undo:hover{border-color:var(--gold)}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted);z-index:20;background:var(--bg)}
 @media (prefers-reduced-motion:reduce){ .float{animation-duration:.01s} .story div{transition:none} }
 
@@ -314,10 +329,19 @@ input:focus-visible + .tgl{outline:3px solid var(--gold);outline-offset:2px}
 <div id="loading">Đang mở cổng địa ngục…</div>
 
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
 </script>
 <script type="module">
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 // Chờ font tiếng Việt tải xong để chữ vẽ lên biển hiệu 3D hiển thị đúng
 try{ await Promise.race([document.fonts.load('800 72px "Baloo 2"'), new Promise(r=>setTimeout(r,2500))]); }catch(e){}
@@ -543,8 +567,13 @@ const Music=(()=>{
    ========================================================= */
 const canvas = document.getElementById('c');
 const stageEl = document.getElementById('stage');
+// Đồ họa cao (PBR + phản chiếu môi trường + bloom + tàn lửa + model GLB) hoặc thấp (toon cũ, nhẹ máy)
+const gfxCfg = Object.assign({hd:true}, store.get('bmdn-gfx')||{});
+{ const q=new URLSearchParams(location.search).get('hd'); if(q!==null) gfxCfg.hd = q!=='0'; }
+const HD = gfxCfg.hd;
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, HD?1.5:2));
+if(HD){ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95; }
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -571,10 +600,16 @@ const gradMap = (()=>{
   const t = new THREE.DataTexture(d,4,1,THREE.RedFormat);
   t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t;
 })();
+// TM(): vật liệu toon ở chế độ thường; ở chế độ HD đổi sang PBR (MeshStandardMaterial) nhám như đất sét/nhựa sơn
+function TM(o){
+  if(!HD) return new THREE.MeshToonMaterial(o);
+  const {gradientMap, ...rest} = o;
+  return new THREE.MeshStandardMaterial({roughness:0.5, metalness:0, envMapIntensity:0.3, ...rest});
+}
 const matCache = new Map();
 function toon(color, emissive=0){
   const key = color+'|'+emissive;
-  if(!matCache.has(key)) matCache.set(key, new THREE.MeshToonMaterial({color, gradientMap:gradMap, emissive}));
+  if(!matCache.has(key)) matCache.set(key, TM({color, gradientMap:gradMap, emissive}));
   return matCache.get(key);
 }
 const outlineMat = new THREE.MeshBasicMaterial({color:0x1a0810, side:THREE.BackSide});
@@ -607,6 +642,51 @@ Object.assign(sun.shadow.camera,{left:-10,right:10,top:10,bottom:-10,near:1,far:
 scene.add(sun);
 const rim = new THREE.DirectionalLight(0xff7a50, 0.9); rim.position.set(-4,5,-12); scene.add(rim);
 const gateLight = new THREE.PointLight(0xff5a20, 30, 22, 1.6); gateLight.position.set(0,3,-10); scene.add(gateLight);
+
+/* ---------- Đồ họa HD: phản chiếu môi trường, bloom, tàn lửa, model GLB ---------- */
+let composer=null, renderPass=null, bloomPass=null, embers=null, envTex=null;
+if(HD){
+  const pm = new THREE.PMREMGenerator(renderer);
+  envTex = pm.fromScene(new RoomEnvironment(renderer), 0.04).texture; pm.dispose();
+  scene.environment = envTex;
+  composer = new EffectComposer(renderer);
+  renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(256,256), 0.5, 0.4, 0.92); composer.addPass(bloomPass);
+  composer.addPass(new OutputPass());
+
+  { // tàn lửa bay lên từ khe nứt dưới đất
+    const N=160, pos=new Float32Array(N*3), sp=new Float32Array(N);
+    for(let i=0;i<N;i++){ pos[i*3]=(Math.random()-.5)*26; pos[i*3+1]=Math.random()*7; pos[i*3+2]=-16+Math.random()*20; sp[i]=0.4+Math.random()*0.9; }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const cv=document.createElement('canvas'); cv.width=cv.height=32; const c=cv.getContext('2d');
+    const rg=c.createRadialGradient(16,16,0,16,16,16); rg.addColorStop(0,'#fff3c0'); rg.addColorStop(.3,'#ffa040'); rg.addColorStop(1,'rgba(255,60,0,0)');
+    c.fillStyle=rg; c.fillRect(0,0,32,32);
+    const mat=new THREE.PointsMaterial({size:0.16, map:new THREE.CanvasTexture(cv), color:0xffb070, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending});
+    embers=new THREE.Points(g,mat); embers.userData.sp=sp; embers.frustumCulled=false; scene.add(embers);
+  }
+
+  // Model 3D ngoài (GLB): cột đèn gỗ cũ, CC0 từ Khronos glTF Sample Assets (models/CREDITS.md)
+  new GLTFLoader().load('models/den-duong.glb', gltf=>{
+    const m=gltf.scene; m.scale.setScalar(0.16); m.position.set(-5.6,0,-0.6); m.rotation.y=Math.PI*0.85;
+    m.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; if(o.material.emissiveMap){ o.material.emissive.set(0xffa040); o.material.emissiveIntensity=1.6; } o.material.envMapIntensity=0.3; } });
+    scene.add(m);
+    const glow=new THREE.PointLight(0xffa050, 6, 7, 1.8); glow.position.set(-4.3,3.2,-0.6); scene.add(glow);
+  }, undefined, e=>console.warn('Không tải được model GLB', e));
+}
+function renderMain(sc, cam){
+  if(!composer){ renderer.render(sc, cam); return; }
+  if(!sc.environment) sc.environment=envTex;   // cảnh phụ (hoạt cảnh, màn bị đuổi) cũng có phản chiếu
+  renderPass.scene=sc; renderPass.camera=cam; composer.render();
+}
+function updateEmbers(dt){
+  if(!embers) return;
+  const a=embers.geometry.attributes.position, sp=embers.userData.sp;
+  for(let i=0;i<sp.length;i++){
+    let y=a.getY(i)+dt*sp[i]; if(y>7.5) y=0;
+    a.setY(i,y); a.setX(i,a.getX(i)+Math.sin(T*1.7+i)*dt*0.25);
+  }
+  a.needsUpdate=true; embers.material.opacity=0.7+Math.sin(T*4)*0.2;
+}
 
 { // Mặt đất + đường đi
   const ground = new THREE.Mesh(new THREE.CircleGeometry(40,48), toon(0x4a1b22));
@@ -698,7 +778,7 @@ const anims = [];   // hiệu ứng nhỏ chạy mỗi khung hình
     const wh = part(new THREE.CylinderGeometry(0.42,0.42,0.18,18), 0x2a1a1a); wh.rotation.x=Math.PI/2; at(wh,s*2.7,0.42,-0.82); cart.add(wh);
     const hub = part(new THREE.CylinderGeometry(0.14,0.14,0.2,10), 0xffc23a, {outline:0}); hub.rotation.x=Math.PI/2; at(hub,s*2.7,0.42,-0.86); cart.add(hub);
   }
-  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.9,0.9,1.0), new THREE.MeshToonMaterial({color:0xbfe8ff, transparent:true, opacity:.28, gradientMap:gradMap}));
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.9,0.9,1.0), TM({color:0xbfe8ff, transparent:true, opacity:.28, gradientMap:gradMap}));
   at(glass,-2.85,COUNTER_Y+0.5,0); cart.add(glass);
   cart.add(at(part(new THREE.BoxGeometry(1.95,0.08,1.05), 0xd8301c),-2.85,COUNTER_Y+0.97,0));
   for(let i=0;i<4;i++){
@@ -939,7 +1019,7 @@ function buildVoThuong(black){
     for(let i=0;i<6;i++){ const l=part(new THREE.TorusGeometry(0.05,0.015,6,10),0x9a9aa8,{outline:0.1}); at(l,0,-i*0.075,0); l.rotation.y=i%2?Math.PI/2:0; chain.add(l); }
     g.add(chain); g.userData.anim=t=>{ chain.rotation.z=Math.sin(t*2)*0.15; };
   } else { // quạt giấy
-    const fan=new THREE.Mesh(new THREE.CircleGeometry(0.34,16,Math.PI*0.15,Math.PI*0.7), new THREE.MeshToonMaterial({color:0xfff6e0,gradientMap:gradMap,side:THREE.DoubleSide}));
+    const fan=new THREE.Mesh(new THREE.CircleGeometry(0.34,16,Math.PI*0.15,Math.PI*0.7), TM({color:0xfff6e0,gradientMap:gradMap,side:THREE.DoubleSide}));
     const fg=new THREE.Group(); fg.add(fan); at(fg,-0.6,0.95,0.15); g.add(fg);
     g.userData.anim=t=>{ fg.rotation.z=Math.sin(t*5)*0.4; };
   }
@@ -1007,7 +1087,7 @@ const TEXDRAW={
   cheese:[64,64,(g,w,h)=>{ g.fillStyle='#ffe39a'; g.fillRect(0,0,w,h); speck(g,w,h,12,['rgba(225,180,80,.6)'],[2,5]); }],
 };
 const tex = k => canvasTex(k, ...TEXDRAW[k]);
-const tm = k => tmCache[k] ??= new THREE.MeshToonMaterial({map:tex(k), gradientMap:gradMap});
+const tm = k => tmCache[k] ??= TM({map:tex(k), gradientMap:gradMap});
 
 function makeBread(){
   const g=new THREE.Group();
@@ -1100,7 +1180,7 @@ function ingredientMesh(key, layer){
     default: { // các loại sốt: rưới zic zắc
       const pts=[]; const n=16, th=key==='sotbo'?0.03:0.022;
       for(let i=0;i<=n;i++) pts.push(new THREE.Vector3(-0.72+i*(1.44/n), y+0.04, (i%2?0.11:-0.11)+R(-.02,.02)));
-      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),80,th,8), new THREE.MeshToonMaterial({color:d.color, gradientMap:gradMap, emissive:d.color, emissiveIntensity:0.15})));
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),80,th,8), TM({color:d.color, gradientMap:gradMap, emissive:d.color, emissiveIntensity:0.15})));
       for(let i=0;i<4;i++) g.add(at(new THREE.Mesh(new THREE.SphereGeometry(th*0.7,6,4),basic(0xffffff,{transparent:true,opacity:.6})),-0.6+i*0.4,y+0.04+th,R(-.08,.08)));
     }
   }
@@ -1381,6 +1461,7 @@ function titleScreen(){
 }
 function startNight(){
   sfx.gong();
+  shopBuys={ing:[],upg:[]};
   for(const cu of [...customers]) removeCustomer(cu);
   SLOTS.forEach(s=>s.busy=null); QSLOTS.forEach(s=>s.busy=null);
   Object.assign(state,{phase:'play', timeLeft:NIGHT_LEN, spawnT:1.5, closing:false, closeT:0, combo:0});
@@ -1428,30 +1509,104 @@ function endNight(){
     <button class="big" id="toShop">🛒 Vào cửa hàng nâng cấp</button>`);
   document.getElementById('toShop').onclick=()=>{ state.night=next; freshIng=[]; saveGame(); shopScreen(); };
 }
+// Những món mua trong lần vào cửa hàng này: được hủy và hoàn tiền đủ cho tới khi bắt đầu đêm
+let shopBuys={ing:[],upg:[]};
 function shopScreen(){
   state.phase='shop'; Music.play('calm');
-  const ingItems=Object.entries(ING).filter(([k,d])=>d.buy>0);
-  const card1=([k,d])=>{ const own=owned(k);
-    return `<div class="item ${own?'has':''}"><b>${d.emoji}</b><div class="nm">${d.name}</div><div class="ef">Bán ${d.price} vàng/phần</div>
-      ${own?'<div class="owned">✓ Đã có</div>':`<button class="buy" data-ing="${k}" ${state.money<d.buy?'disabled':''}>Mua ${d.buy} 💰</button>`}</div>`; };
-  const card2=([k,u])=>{ const own=has(k);
-    return `<div class="item ${own?'has':''}"><b>${u.emoji}</b><div class="nm">${u.name}</div><div class="ef">${u.desc}</div>
-      ${own?'<div class="owned">✓ Đã lắp</div>':`<button class="buy" data-upg="${k}" ${state.money<u.price?'disabled':''}>Mua ${u.price} 💰</button>`}</div>`; };
   showCard(`
     <h2>Cửa hàng âm phủ</h2>
-    <div class="wallet">💰 ${state.money} vàng mã</div>
-    <p>Khách chỉ gọi những món bạn có. Món đắt tiền giúp kiếm nhiều hơn để trả tiền thuê ${rentFor(state.night)} vàng cuối đêm ${state.night}.</p>
+    <div class="wallet" id="wallet"></div>
+    <p>Khách chỉ gọi những món bạn có. Món đắt tiền giúp kiếm nhiều hơn để trả tiền thuê ${rentFor(state.night)} vàng cuối đêm ${state.night}. Mua nhầm thì bấm <b>↩ Hủy</b> để lấy lại tiền trước khi vào đêm.</p>
     <h3>Nguyên liệu mới</h3>
-    <div class="shop">${ingItems.map(card1).join('')}</div>
+    <div class="shop" id="shopIng"></div>
     <h3>Nâng cấp xe</h3>
-    <div class="shop">${Object.entries(UPG).map(card2).join('')}</div>
+    <div class="cartpv"><canvas id="cartCv" aria-label="Xem trước xe bánh mỳ, kéo để xoay"></canvas><span class="pvtag" id="pvTag" hidden></span><div class="pvcap" id="pvCap">Chạm vào một món để xem trước trên xe · kéo để xoay</div></div>
+    <div class="shop" id="shopUpg"></div>
     <button class="big" id="go">Bắt đầu đêm ${state.night} ▶</button>
     <div class="linkrow"><button class="linkbtn" id="almS">📖 Sổ tay khách hàng</button></div>`, true);
-  document.getElementById('almS').onclick=()=>almanacScreen(shopScreen);
-  card.querySelectorAll('[data-ing]').forEach(b=>b.onclick=()=>{ const k=b.dataset.ing; if(state.money<ING[k].buy) return; state.money-=ING[k].buy; state.owned.push(k); freshIng.push(k); sfx.buy(); saveGame(); const st=card.scrollTop; shopScreen(); card.scrollTop=st; });
-  card.querySelectorAll('[data-upg]').forEach(b=>b.onclick=()=>{ const k=b.dataset.upg; if(state.money<UPG[k].price) return; state.money-=UPG[k].price; state.upgrades.push(k); refreshUpgrades(); sfx.buy(); saveGame(); const st=card.scrollTop; shopScreen(); card.scrollTop=st; });
-  document.getElementById('go').onclick=()=>startNight();
+  const $=id=>document.getElementById(id);
+  openCartPreview($('cartCv'));
+  let sel=null;
+  const select=k=>{
+    sel=k; cartPreviewShow(k);
+    const u=k&&UPG[k], tag=$('pvTag');
+    $('pvCap').textContent = !u ? 'Chạm vào một món để xem trước trên xe · kéo để xoay'
+      : `${u.emoji} ${u.name}` + (upgradeVis[k] ? '' : ' (không đổi ngoại hình xe, hiệu lực khi bị đuổi)');
+    tag.hidden=!u; if(u){ tag.textContent = has(k)?'Đã lắp':'Xem trước'; tag.classList.toggle('own',has(k)); }
+    card.querySelectorAll('[data-pv]').forEach(el=>el.classList.toggle('sel',el.dataset.pv===k));
+  };
+  const render=()=>{
+    $('wallet').textContent=`💰 ${state.money} vàng mã`;
+    const undo=(kind,k,amt)=>`<button class="undo" data-undo-${kind}="${k}">↩ Hủy, hoàn ${amt} 💰</button>`;
+    $('shopIng').innerHTML=Object.entries(ING).filter(([k,d])=>d.buy>0).map(([k,d])=>{ const own=owned(k);
+      return `<div class="item ${own?'has':''}"><b>${d.emoji}</b><div class="nm">${d.name}</div><div class="ef">Bán ${d.price} vàng/phần</div>
+        ${own?'<div class="owned">✓ Đã có</div>'+(shopBuys.ing.includes(k)?undo('ing',k,d.buy):''):`<button class="buy" data-ing="${k}" ${state.money<d.buy?'disabled':''}>Mua ${d.buy} 💰</button>`}</div>`; }).join('');
+    $('shopUpg').innerHTML=Object.entries(UPG).map(([k,u])=>{ const own=has(k);
+      return `<div class="item upg ${own?'has':''} ${sel===k?'sel':''}" data-pv="${k}" tabindex="0"><span class="pr">${u.price}💰</span><b>${u.emoji}</b><div class="nm">${u.name}</div><div class="ef">${u.desc}</div>
+        ${own?'<div class="owned">✓ Đã lắp</div>'+(shopBuys.upg.includes(k)?undo('upg',k,u.price):''):`<button class="buy" data-upg="${k}" ${state.money<u.price?'disabled':''}>Lắp ${u.price} 💰</button>`}</div>`; }).join('');
+    card.querySelectorAll('[data-ing]').forEach(b=>b.onclick=()=>{ const k=b.dataset.ing; if(state.money<ING[k].buy) return;
+      state.money-=ING[k].buy; state.owned.push(k); freshIng.push(k); shopBuys.ing.push(k); sfx.buy(); saveGame(); render(); });
+    card.querySelectorAll('[data-undo-ing]').forEach(b=>b.onclick=()=>{ const k=b.dataset.undoIng; if(!shopBuys.ing.includes(k)) return;
+      state.money+=ING[k].buy; state.owned=state.owned.filter(x=>x!==k); freshIng=freshIng.filter(x=>x!==k); shopBuys.ing=shopBuys.ing.filter(x=>x!==k); sfx.coin(); saveGame(); render(); });
+    card.querySelectorAll('[data-pv]').forEach(el=>{ el.onclick=()=>select(el.dataset.pv); el.onkeydown=e=>{ if(e.key==='Enter'&&e.target===el) select(el.dataset.pv); }; });
+    card.querySelectorAll('[data-upg]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const k=b.dataset.upg; if(state.money<UPG[k].price) return;
+      state.money-=UPG[k].price; state.upgrades.push(k); shopBuys.upg.push(k); refreshUpgrades(); sfx.buy(); saveGame(); render(); select(k); cartPreviewPop(k); });
+    card.querySelectorAll('[data-undo-upg]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const k=b.dataset.undoUpg; if(!shopBuys.upg.includes(k)) return;
+      state.money+=UPG[k].price; state.upgrades=state.upgrades.filter(x=>x!==k); shopBuys.upg=shopBuys.upg.filter(x=>x!==k); refreshUpgrades(); sfx.coin(); saveGame(); render(); select(null); });
+  };
+  render();
+  $('almS').onclick=()=>{ closePreview(); almanacScreen(shopScreen); };
+  $('go').onclick=()=>{ closePreview(); startNight(); };
 }
+
+/* ---------- Khung xem trước xe bánh mỳ 3D trong cửa hàng ---------- */
+const UPG_FOCUS={chuong:[-3.75,2.4,0.55],denlong:[-3.3,2.1,-0.55],loa:[3.75,2.5,0.4],tulanh:[-1.75,1.9,-0.1],lo:[1.75,1.7,-0.05],mano:[-2.85,2.6,0.1]};
+for(const k in upgradeVis) upgradeVis[k].name='upg_'+k;
+function openCartPreview(canvasEl){
+  closePreview();
+  const r=new THREE.WebGLRenderer({canvas:canvasEl, antialias:true, alpha:true});
+  r.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); r.outputColorSpace=THREE.SRGBColorSpace;
+  r.shadowMap.enabled=true; r.shadowMap.type=THREE.PCFSoftShadowMap;
+  const sc=new THREE.Scene();
+  if(HD){ r.toneMapping=THREE.ACESFilmicToneMapping; r.toneMappingExposure=1.0;
+    const pm=new THREE.PMREMGenerator(r); sc.environment=pm.fromScene(new RoomEnvironment(r),0.04).texture; pm.dispose(); }
+  sc.add(new THREE.HemisphereLight(0xffe4d6,0x40182a,1.2));
+  const key=new THREE.DirectionalLight(0xffecd8,1.8); key.position.set(3,7,6); key.castShadow=true; key.shadow.mapSize.set(1024,1024);
+  Object.assign(key.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:1,far:25}); sc.add(key);
+  const rim=new THREE.DirectionalLight(0xff6a2a,1.5); rim.position.set(-4,3,-6); sc.add(rim);
+  const disc=part(new THREE.CylinderGeometry(4.7,4.9,0.16,48), 0x4a1c2c,{outline:0.015}); at(disc,0,-0.08,0); sc.add(disc);
+  const model=cart.clone(true); model.position.set(0,0,0); sc.add(model);
+  const marker=new THREE.Mesh(new THREE.ConeGeometry(0.16,0.34,12), basic(0xffcf4a)); marker.rotation.x=Math.PI; marker.visible=false; sc.add(marker);
+  const cam=new THREE.PerspectiveCamera(34,1,0.1,60);
+  const pv={r, sc, cam, model, marker, yaw:-0.45, spin:0.22, drag:null, raf:0, t:0, last:performance.now(),
+    look:new THREE.Vector3(0,1.2,0), lookTo:new THREE.Vector3(0,1.2,0), dist:10, distTo:10, pops:[]};
+  const fit=()=>{ const w=canvasEl.clientWidth||300, h=canvasEl.clientHeight||200; r.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
+    pv.base = 9.6/Math.min(1.25,Math.max(0.55,cam.aspect/1.6)); if(!pv.focus) pv.distTo=pv.base; };
+  pv.fit=fit; fit(); pv.dist=pv.distTo;
+  new ResizeObserver(()=>preview===pv&&fit()).observe(canvasEl);
+  canvasEl.addEventListener('pointerdown',e=>{ pv.drag={x:e.clientX,yaw:pv.yaw}; pv.spin=0; canvasEl.setPointerCapture?.(e.pointerId); });
+  canvasEl.addEventListener('pointermove',e=>{ if(pv.drag) pv.yaw=pv.drag.yaw+(e.clientX-pv.drag.x)*0.01; });
+  const up=()=>{ if(pv.drag){ pv.drag=null; pv.spin=0.12; } };
+  canvasEl.addEventListener('pointerup',up); canvasEl.addEventListener('pointercancel',up);
+  const loop=now=>{ const dt=Math.min(0.05,(now-pv.last)/1000); pv.last=now; pv.t+=dt;
+    if(!pv.drag) pv.yaw+=pv.spin*dt;
+    pv.look.lerp(pv.lookTo,1-Math.exp(-dt*5)); pv.dist+= (pv.distTo-pv.dist)*(1-Math.exp(-dt*5));
+    cam.position.set(Math.sin(pv.yaw)*pv.dist, 2.6+pv.dist*0.12, Math.cos(pv.yaw)*pv.dist); cam.lookAt(pv.look);
+    if(marker.visible){ marker.position.y=pv.markY+0.25+Math.abs(Math.sin(pv.t*4))*0.18; marker.rotation.y=pv.t*3; }
+    for(let i=pv.pops.length-1;i>=0;i--){ const p=pv.pops[i]; p.t+=dt*4; for(const c of p.o.children) c.scale.setScalar(p.t<1?Math.max(0.01,ease(p.t)*1.1):1); if(p.t>=1) pv.pops.splice(i,1); }
+    r.render(sc,cam); pv.raf=requestAnimationFrame(loop); };
+  pv.raf=requestAnimationFrame(loop);
+  preview=pv; cartPreviewShow(null); return pv;
+}
+function cartPreviewShow(k){
+  const pv=preview; if(!pv?.model) return;
+  for(const key in upgradeVis){ const o=pv.model.getObjectByName('upg_'+key); if(o) o.visible = has(key) || key===k; }
+  pv.focus=k && UPG_FOCUS[k];
+  if(pv.focus){ const [x,y,z]=pv.focus; pv.lookTo.set(x*0.7,y-0.5,z); pv.distTo=pv.base*0.72; pv.marker.visible=true; pv.marker.position.set(x,y,z); pv.markY=y; pv.spin=0.08;
+    pv.yaw = Math.atan2(Math.sin(pv.yaw),Math.cos(pv.yaw)); }
+  else { pv.lookTo.set(0,1.2,0); pv.distTo=pv.base; pv.marker.visible=false; }
+}
+function cartPreviewPop(k){ const o=preview?.model?.getObjectByName('upg_'+k); if(o) preview.pops.push({o,t:0}); }
 /* =========================================================
    ===== MỞ ĐẦU: CỐT TRUYỆN + TẠO NHÂN VẬT =====
    Hoạt cảnh mở đầu, màn "Sổ Sinh Tử" chọn tên + ngoại hình,
@@ -1573,7 +1728,7 @@ function buildPlayer(p){
     g.add(at(part(new THREE.BoxGeometry(0.42,0.04,0.2), 0x222222,{outline:0.04}), 0,HY+0.26,HR+0.02));
     g.add(at(part(new THREE.BoxGeometry(0.06,0.3,0.03), 0xffffff,{outline:0}), 0,HY+0.4,0.12));
   } else if(p.hat==='khan'){
-    const band=new THREE.Mesh(new THREE.TorusGeometry(HR+0.02,0.065,8,28), new THREE.MeshToonMaterial({map:khanTexture(), gradientMap:gradMap}));
+    const band=new THREE.Mesh(new THREE.TorusGeometry(HR+0.02,0.065,8,28), TM({map:khanTexture(), gradientMap:gradMap}));
     band.rotation.x=Math.PI/2-0.25; at(band,0,HY+0.2,0); g.add(band);
     for(const s of [-1,1]){ const t=part(new THREE.BoxGeometry(0.08,0.24,0.03), 0x2a2024,{outline:0.05}); at(t,s*0.08,HY+0.05,-HR-0.06); t.rotation.z=s*0.4; g.add(t); }
   }
@@ -2447,7 +2602,9 @@ function settingsScreen(back){
       ${rg('sMv','Âm lượng nhạc',audioCfg.mv)}
       ${tg('sSfx','🔔 Tiếng động',audioCfg.sfx)}
       ${rg('sSv','Âm lượng tiếng động',audioCfg.sv)}
+      ${tg('sHd','✨ Đồ họa cao (tắt nếu máy giật)',gfxCfg.hd)}
     </div>
+    <p id="sHdNote" ${gfxCfg.hd===HD?'hidden':''}><small>Đổi đồ họa sẽ áp dụng khi tải lại trang.</small></p>
     ${paused?'<p>Trò chơi đang tạm dừng, khách vẫn đứng chờ.</p>':''}
     <button class="big" id="sBack">${paused?'▶ Chơi tiếp':'Xong'}</button>
     ${paused?'<div class="linkrow"><button class="linkbtn" id="sAlm">📖 Sổ tay khách hàng</button></div>':''}`);
@@ -2458,6 +2615,7 @@ function settingsScreen(back){
   $('sMv').onchange=()=>saveAudio();
   $('sSv').oninput=e=>{ audioCfg.sv=e.target.value/100; applyAudio(); };
   $('sSv').onchange=()=>{ saveAudio(); sfx.coin(); };
+  $('sHd').onchange=e=>{ gfxCfg.hd=e.target.checked; store.set('bmdn-gfx',gfxCfg); $('sHdNote').hidden = gfxCfg.hd===HD; };
   $('sBack').onclick=()=>{ if(paused){ if(state.phase==='paused') state.phase='play'; hideCard(); } else (back||hideCard)(); };
   if($('sAlm')) $('sAlm').onclick=()=>{ state.phase='play'; almanacScreen(); };
 }
@@ -2739,7 +2897,7 @@ function buildCourt(){
     for(let c=0;c<14;c++) for(let r=0;r<9;r++){ if(Math.random()<0.85) g.fillRect(24+c*34+(c>6?14:0),18+r*26,14+Math.random()*10,6); }
     g.fillStyle='rgba(140,80,40,.85)'; g.beginPath(); g.ellipse(170,140,80,52,0.3,0,7); g.fill(); speck(g,w,h,24,['rgba(140,80,40,.8)'],[3,8]);
     g.strokeStyle='#a08060'; g.lineWidth=3; g.beginPath(); g.moveTo(w/2,0); g.lineTo(w/2,h); g.stroke(); });
-  const book=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.75),new THREE.MeshToonMaterial({map:pageTex,gradientMap:gradMap,side:THREE.DoubleSide}));
+  const book=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.75),TM({map:pageTex,gradientMap:gradMap,side:THREE.DoubleSide}));
   book.rotation.x=-Math.PI/2+0.35; at(book,0,1.08,-1.1); sc.add(book);
   sc.add(at(part(new THREE.BoxGeometry(1.56,0.06,0.8),0x3a2a6a),0,1.0,-1.12));
   const bang=label('!',{w:128,h:128,bg:'#ffcf4a',fg:'#b3241a',font:'800 110px "Baloo 2", sans-serif',scale:0.5}); bang.visible=false; sc.add(bang);
@@ -2823,6 +2981,7 @@ function resize(){
   const w=stageEl.clientWidth, h=stageEl.clientHeight;
   if(!w||!h) return;
   renderer.setSize(w,h,false);
+  composer?.setSize(w,h);
   const aspect=w/h; camera.aspect=aspect;
   // Khung hình luôn chứa đủ 3 chỗ khách; màn hẹp (điện thoại dọc) thì khách đứng sát nhau hơn
   slotScale = aspect<0.8 ? 0.62 : aspect<1.25 ? 0.8 : 1;
@@ -2853,6 +3012,7 @@ function tick(){
   gateLight.intensity=26+Math.sin(T*3)*6;
   for(const a of anims) a(T);
   fxUpdate(dt);
+  updateEmbers(dt);
   if(C && (state.phase==='chase'||state.phase==='chaseEnd')) chaseUpdate(dt);
   if(CUT) cutUpdate(dt);
   breadUpdate(dt);
@@ -2925,13 +3085,13 @@ function tick(){
   }
 
   const shot = CUT && CUT.shots[CUT.i];
-  if(shot) renderer.render(shot.scene||scene, cutCam);
-  else if(CH && (state.phase==='chase'||state.phase==='chaseEnd')) renderer.render(CH.sc, chaseCam);
-  else renderer.render(scene,camera);
+  if(shot) renderMain(shot.scene||scene, cutCam);
+  else if(CH && (state.phase==='chase'||state.phase==='chaseEnd')) renderMain(CH.sc, chaseCam);
+  else renderMain(scene,camera);
   requestAnimationFrame(tick);
 }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) clock.getDelta(); });
-if(new URLSearchParams(location.search).has('debug')) window.__bmdn = {state, customers, ING, UPG, CUST, spawn:spawnCustomer, refreshUpgrades, buildButtons, startChaseEvent, closeShop, gameOver, settingsScreen, Music, audioCfg, takeBread, almanacScreen, QSLOTS, SLOTS, seen, ICON, beginNewGame, addIngredient, serve, get C(){return C;}, get CUT(){return CUT;}}; // chỉ dùng khi kiểm thử
+if(new URLSearchParams(location.search).has('debug')) window.__bmdn = {state, customers, ING, UPG, CUST, spawn:spawnCustomer, refreshUpgrades, buildButtons, startChaseEvent, closeShop, gameOver, settingsScreen, Music, audioCfg, takeBread, almanacScreen, QSLOTS, SLOTS, seen, ICON, beginNewGame, startNight, shopScreen, addIngredient, serve, get C(){return C;}, get CUT(){return CUT;}}; // chỉ dùng khi kiểm thử
 
 buildIcons();
 resize(); resetBread(); updateHud(); refreshUpgrades();
