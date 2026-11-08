@@ -36,6 +36,24 @@ Vào **Settings → Pages** của repo, chọn *Deploy from a branch*, nhánh `m
 
 https://idarkiit.github.io/Banh-mi-dia-nguc/
 
+## Đưa game lên Cloudflare (tên miền riêng)
+
+Repo đã có sẵn cấu hình cho Cloudflare Workers (trang tĩnh, không cần build):
+
+- `wrangler.jsonc`: tên dự án `banh-mi-dia-nguc`, phục vụ file `index.html` ở thư mục gốc.
+- `.assetsignore`: không đưa README, file cấu hình, thư mục `.git` lên mạng.
+- `_headers`: thêm vài header bảo mật cơ bản.
+
+Các bước (làm một lần trên tài khoản Cloudflare):
+
+1. Vào [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages** → **Create application** → **Import a repository** (Continue with GitHub).
+2. Cấp quyền cho Cloudflare đọc repo `idarkiit/banh-mi-dia-nguc`, chọn repo đó.
+3. Ở màn cấu hình: *Project name* `banh-mi-dia-nguc`, *Build command* để trống, *Deploy command* `npx wrangler deploy`, nhánh production `main`. Bấm **Deploy**.
+4. Khoảng 1 phút sau, game chạy ở `https://banh-mi-dia-nguc.<tên-tài-khoản>.workers.dev`.
+5. Muốn dùng tên miền riêng (tên miền phải đang quản lý DNS trên Cloudflare): vào Worker vừa tạo → **Settings → Domains & Routes → Add → Custom domain**, gõ ví dụ `banhmi.tenmiencuaban.com`. Cloudflare tự tạo DNS và chứng chỉ HTTPS.
+
+Từ đó mỗi lần merge vào `main`, Cloudflare tự deploy lại bản mới.
+
 ## Cấu trúc
 
 Toàn bộ game nằm trong một file `index.html`: dữ liệu (thực đơn, khách), cảnh 3D dựng bằng Three.js với vật liệu toon và viền đen, logic game và giao diện. Tiến trình được lưu trong trình duyệt (localStorage).

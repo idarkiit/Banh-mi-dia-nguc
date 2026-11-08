@@ -1,0 +1,10 @@
+// Cấu hình Cloudflare Workers (static assets) cho game.
+// Game là một trang tĩnh nên không cần Worker script, chỉ cần phục vụ các file trong thư mục gốc.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "banh-mi-dia-nguc",
+  "compatibility_date": "2026-11-08",
+  "assets": {
+    "directory": "."
+  }
+}
