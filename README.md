@@ -12,6 +12,14 @@ Mỗi đêm dài 2 phút. Giao nhanh được nhiều tip, giao đúng liên ti�
 
 Khách đặc biệt: Ngạ quỷ gọi 2 ổ, Hắc Bạch Vô Thường đi cùng nhau (giao đủ cả hai mới được thưởng), Mạnh Bà tặng Cháo Lãng Quên để tha một lần sai món.
 
+Khách bí ẩn: một vị khách trùm áo choàng có thể ghé bất kỳ đêm nào. Giao đúng và nhanh thì lộ diện thành quý nhân (Diêm Vương thưởng vàng và danh tiếng, Thần Tài lì xì, Thanh tra Vệ sinh tặng giấy khen); phục vụ kém thì bị phạt.
+
+Ngưu Đầu Mã Diện: từ đêm 2, hai vị sai nha có thể tới kiểm tra giấy phép bán hàng rong. Bạn đẩy xe chạy trốn trong 25 giây: vuốt trái/phải (hoặc phím mũi tên) để đổi làn, vuốt lên (hoặc Space) để nhảy qua vạc dầu, nhặt thỏi vàng dọc đường. Bị bắt thì nộp phạt. Nâng cấp *Xe máy độ* giúp chạy trước xa hơn.
+
+Hoạt cảnh: cuối mỗi đêm có cảnh đóng cửa xe; khi phá sản hoặc mất hết danh tiếng có cảnh bị thu hồi xe rồi đi tìm việc khác (chèo đò, phụ bán cháo cho Mạnh Bà…). Có nút Bỏ qua.
+
+Âm thanh: nhạc nền ma quái (đàn bầu, mõ, chuông chùa) được tổng hợp ngay trong trình duyệt. Nút ⚙️ trên màn hình mở Cài đặt để bật/tắt nhạc nền, tiếng động và chỉnh âm lượng (đồng thời tạm dừng game).
+
 ## Chạy thử
 
 Không cần cài đặt. Mở `index.html` bằng trình duyệt (Chrome, Edge, Safari, Firefox) là chơi được, trên cả máy tính và điện thoại. Cần có mạng để tải thư viện Three.js và font chữ.
