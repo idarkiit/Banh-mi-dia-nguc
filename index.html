@@ -150,6 +150,56 @@ table.sum td:last-child{text-align:right;font-weight:800}
 .owned{margin-top:6px;color:var(--good);font-weight:800;font-size:14px}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--muted);z-index:20;background:var(--bg)}
 @media (prefers-reduced-motion:reduce){ .float{animation-duration:.01s} .story div{transition:none} }
+
+/* ===== MỞ ĐẦU: CỐT TRUYỆN + TẠO NHÂN VẬT ===== */
+.card.wide{width:min(780px,100%)}
+.scene-art{position:relative;height:clamp(110px,24vh,180px);border-radius:16px;margin:0 0 10px;overflow:hidden;
+  display:flex;align-items:flex-end;justify-content:center;gap:2px;padding-bottom:12px;font-size:clamp(42px,11vw,66px);line-height:1;
+  background:linear-gradient(#1c0820,#5a1424);border:2px solid var(--line);cursor:pointer}
+.scene-art.city{background:linear-gradient(#0f1636,#3a2a5a 70%,#2a1a24)}
+.scene-art.fog{background:linear-gradient(#3a2a3a,#8a6a7a)}
+.scene-art.hell{background:radial-gradient(ellipse at 50% 100%,#ff8a2a,#a3121a 45%,#2a0610)}
+.scene-art.court{background:linear-gradient(#2a0d10,#5a1a1a);}
+.scene-art .bg{position:absolute;opacity:.35;font-size:1.9em;bottom:-6px}
+.scene-art .sm{font-size:.62em}
+.scene-art img.av{height:115%;max-height:150px;width:auto;margin-bottom:-12px;filter:drop-shadow(0 4px 0 rgba(0,0,0,.45))}
+.scene-art .sil{filter:brightness(0) drop-shadow(0 0 6px #ff7a1a)}
+.scene-art .bob{animation:bob 1.6s ease-in-out infinite}
+.scene-art .shake{animation:shk .18s linear infinite}
+.scene-art .zoom{animation:zoom .6s ease-out}
+@keyframes bob{50%{transform:translateY(-8px)}}
+@keyframes shk{25%{transform:translate(-3px,1px) rotate(-3deg)}75%{transform:translate(3px,-1px) rotate(3deg)}}
+@keyframes zoom{from{transform:scale(.3);opacity:0}}
+.speaker{font-weight:800;color:var(--gold);font-size:15px;text-align:left;min-height:1.2em}
+.say{min-height:4.3em;text-align:left;font-size:17px;line-height:1.4;color:var(--ink);cursor:pointer}
+.dots{display:flex;gap:6px;justify-content:center;margin-top:10px}
+.dots i{width:8px;height:8px;border-radius:9px;background:var(--line)} .dots i.on{background:var(--gold)}
+.navrow{display:flex;gap:10px;align-items:center}
+.navrow .big{flex:1}
+.skip{background:none;color:var(--muted);font-weight:700;font-size:14px;padding:12px 4px 0;white-space:nowrap;flex:none}
+.cc{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;text-align:left;margin-top:8px}
+.cc>div{min-width:0}
+@media (min-width:640px){.cc{grid-template-columns:250px minmax(0,1fr);align-items:start}}
+#ccView{display:block;width:100%;height:clamp(160px,32vh,290px);border-radius:16px;touch-action:none;cursor:grab;
+  background:radial-gradient(ellipse at 50% 70%,#7a2438,#2a0d18 75%);border:2px solid var(--line)}
+.ccHint{font-size:12px;color:var(--muted);text-align:center;margin-top:2px}
+.opt{margin:0 0 8px}
+.opt>b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+.ccName{display:flex;gap:6px}
+.ccName input{flex:1;min-width:0;font:inherit;font-size:18px;font-weight:700;padding:5px 12px;border-radius:12px;
+  border:2px solid var(--line);background:var(--paper);color:var(--paperInk);outline:none;user-select:text;-webkit-user-select:text}
+.ccName input:focus{border-color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:rgba(0,0,0,.3);border:2px solid var(--line);border-radius:999px;padding:3px 11px;font-weight:700;font-size:14px}
+.chip.on{border-color:var(--gold);color:var(--gold);background:rgba(255,207,74,.14)}
+.sw{width:30px;height:30px;border-radius:50%;padding:0;border:3px solid rgba(0,0,0,.45);box-shadow:0 2px 0 rgba(0,0,0,.35)}
+.sw.on{border-color:var(--gold);transform:scale(1.12)}
+.meline{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 0;color:var(--ink);font-weight:700}
+.meline img{width:42px;height:42px;border-radius:50%;background:#43192b;border:2px solid var(--line)}
+.linkbtn{background:none;color:var(--muted);text-decoration:underline;font-weight:700;font-size:14px;padding:4px}
+#meAv{width:26px;height:26px;border-radius:50%;margin:0 2px 0 -8px;background:#43192b;object-fit:cover}
+#meName{font-size:14px;color:var(--ink);margin-right:4px;max-width:9em;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:700px),(max-height:540px){#meName{display:none}}
 </style>
 </head>
 <body>
@@ -446,6 +496,7 @@ for(let i=0;i<14;i++){
    XE BÁNH MỲ + ĐỒ NÂNG CẤP (hiện ra khi mua)
    ========================================================= */
 const COUNTER_Y = 1.15, COUNTER_Z = 5.0;
+let cartSign = null; // biển hiệu, đổi theo tên người chơi
 const cart = new THREE.Group(); at(cart,0,0,COUNTER_Z); scene.add(cart);
 const upgradeVis = {};
 const anims = [];   // hiệu ứng nhỏ chạy mỗi khung hình
@@ -471,6 +522,7 @@ const anims = [];   // hiệu ứng nhỏ chạy mỗi khung hình
   cart.add(at(part(new THREE.BoxGeometry(2.6,0.08,0.95), 0xc58a52),0,COUNTER_Y+0.04,0));
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4,0.42), basic(0xffffff,{map:textTexture('BÁNH MỲ ĐỊA NGỤC',{w:768,h:128,font:'800 64px "Baloo 2", sans-serif',bg:'#d8301c',fg:'#fff6e4',border:'#ffcf4a'})}));
   at(sign,0,0.62,0.76); cart.add(sign);
+  cartSign = sign;
 
   // --- đồ nâng cấp ---
   const pole = (x) => { const g=new THREE.Group(); g.add(at(part(new THREE.CylinderGeometry(0.05,0.06,1.2,8),0x3a2020),x,COUNTER_Y+0.6,0.55)); return g; };
@@ -1022,9 +1074,11 @@ function titleScreen(){
     </div>
     ${save?`<button class="big" id="cont">▶ Chơi tiếp (Đêm ${save.night})</button>`:''}
     <button class="big ${save?'alt':''}" id="new">${save?'Khởi nghiệp lại từ đầu':'▶ Bắt đầu khởi nghiệp'}</button>
-    ${best?`<p style="margin-top:12px">Kỷ lục: sống sót ${best} đêm</p>`:''}`);
-  document.getElementById('new').onclick=()=>{ store.del(SAVE); Object.assign(state,{night:1,money:START_MONEY,rep:70,debtNights:0,owned:[...STARTER],upgrades:[],chao:0}); freshIng=[]; startNight(); };
-  const c=document.getElementById('cont'); if(c) c.onclick=()=>{ Object.assign(state,save); freshIng=[]; startNight(); };
+    ${best?`<p style="margin-top:12px">Kỷ lục: sống sót ${best} đêm</p>`:''}
+    ${playerTitleHtml()}`);
+  document.getElementById('new').onclick=()=>{ store.del(SAVE); Object.assign(state,{night:1,money:START_MONEY,rep:70,debtNights:0,owned:[...STARTER],upgrades:[],chao:0}); freshIng=[]; beginNewGame(); };
+  const c=document.getElementById('cont'); if(c) c.onclick=()=>{ Object.assign(state,save); freshIng=[]; ensurePlayer(startNight); };
+  bindPlayerTitle();
 }
 function startNight(){
   sfx.gong();
@@ -1107,6 +1161,331 @@ function gameOver(cause){
   card.querySelectorAll('.story div').forEach((d,i)=>setTimeout(()=>d.classList.add('on'),400+i*900));
   document.getElementById('again').onclick=()=>titleScreen();
 }
+
+/* =========================================================
+   ===== MỞ ĐẦU: CỐT TRUYỆN + TẠO NHÂN VẬT =====
+   Hoạt cảnh mở đầu, màn "Sổ Sinh Tử" chọn tên + ngoại hình,
+   chủ xe 3D (buildPlayer), biển hiệu và ảnh đại diện trên HUD.
+   ========================================================= */
+const PLAYER_KEY = 'bmdn_player';
+const PL = {
+  body:  [['nam','Nam'],['nu','Nữ']],
+  skin:  [0xffdcb8, 0xf2c497, 0xd9a066, 0x9a6440],
+  hair:  [['ngan','Ngắn'],['dinh','Đầu đinh'],['xoan','Xoăn'],['bui','Búi tó'],['duoi','Đuôi ngựa'],['dai','Tóc dài']],
+  hairColor: [0x1e1414, 0x5a3420, 0xc9c9d2, 0xff7ab0, 0x3fb3c9, 0xe8c040],
+  outfit:[['tapde','Tạp dề'],['baba','Áo bà ba'],['thun','Áo thun'],['balo','Áo ba lỗ']],
+  color: [0xd8301c, 0x2f6fd0, 0x3a9a4a, 0xffb52e, 0x7b4aa8, 0xf4f0e6],
+  hat:   [['khong','Không'],['nonla','Nón lá'],['bep','Mũ đầu bếp'],['baohiem','Mũ bảo hiểm'],['khan','Khăn rằn']],
+};
+const NAME_IDEAS = ['Út Giòn','Cô Ba Pate','Anh Tư','Bé Tí','Chú Bảy','Tèo','Cu Bin','Chị Hai','Bé Na','Ông Năm','Mập Ú','Cô Út'];
+const plPick = a => a[Math.floor(Math.random()*a.length)];
+const plHex = c => '#'+c.toString(16).padStart(6,'0');
+const plEsc = t => String(t).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const defaultProfile = () => ({name:'', body:'nam', skin:0, hair:'ngan', hairColor:0, outfit:'tapde', color:0, hat:'nonla', portrait:''});
+const randomProfile = () => {
+  const body = plPick(['nam','nu']);
+  return {name:plPick(NAME_IDEAS), body, skin:Math.floor(Math.random()*4),
+    hair: body==='nu' ? plPick(['bui','duoi','dai','xoan','ngan']) : plPick(['ngan','dinh','xoan','ngan']),
+    hairColor: Math.random()<.6?0:Math.floor(Math.random()*6), outfit:plPick(PL.outfit)[0],
+    color:Math.floor(Math.random()*6), hat:plPick(PL.hat)[0], portrait:''};
+};
+let player = store.get(PLAYER_KEY);
+if(player && typeof player!=='object') player = null;
+
+/* ---------- Chủ xe 3D ---------- */
+let checkerTex = null;
+function khanTexture(){
+  if(checkerTex) return checkerTex;
+  const cv=document.createElement('canvas'); cv.width=cv.height=32; const g=cv.getContext('2d');
+  for(let y=0;y<4;y++) for(let x=0;x<4;x++){ g.fillStyle=(x+y)%2?'#f4efe6':'#2a2024'; g.fillRect(x*8,y*8,8,8); }
+  checkerTex=new THREE.CanvasTexture(cv); checkerTex.colorSpace=THREE.SRGBColorSpace;
+  checkerTex.wrapS=checkerTex.wrapT=THREE.RepeatWrapping; checkerTex.repeat.set(6,1); checkerTex.magFilter=THREE.NearestFilter;
+  return checkerTex;
+}
+function buildPlayer(p){
+  p = Object.assign(defaultProfile(), p||{});
+  const g=new THREE.Group();
+  const skin=PL.skin[p.skin]??PL.skin[0], hc=PL.hairColor[p.hairColor]??PL.hairColor[0], oc=PL.color[p.color]??PL.color[0];
+  const female=p.body==='nu', pants=0x2b2440;
+  const HY=1.5, HR=0.42; // tâm đầu, bán kính đầu (tỉ lệ chibi)
+
+  // chân + dép
+  for(const s of [-1,1]){
+    g.add(at(part(new THREE.CapsuleGeometry(0.11,0.26,4,10), pants), s*0.14,0.27,0));
+    const shoe=part(new THREE.CapsuleGeometry(0.095,0.12,4,8), 0x3a2418); shoe.rotation.x=Math.PI/2; at(shoe,s*0.14,0.08,0.06); g.add(shoe);
+  }
+  // thân
+  const shirt = p.outfit==='tapde' ? 0xf6f1e6 : oc;
+  g.add(at(part(new THREE.CapsuleGeometry(female?0.29:0.32,0.34,6,16), shirt), 0,0.78,0));
+  if(female){ const sk=part(new THREE.ConeGeometry(0.42,0.42,18,1,true), p.outfit==='tapde'?oc:shirt); at(sk,0,0.56,0); g.add(sk); }
+  if(p.outfit==='tapde'){
+    g.add(at(part(new THREE.BoxGeometry(0.46,0.56,0.05), oc,{outline:0.04}), 0,0.68,0.3));
+    g.add(at(part(new THREE.BoxGeometry(0.2,0.1,0.03), 0xffffff,{outline:0.06}), 0,0.6,0.335));
+    for(const s of [-1,1]){ const st=part(new THREE.BoxGeometry(0.05,0.3,0.04), oc,{outline:0}); at(st,s*0.15,1.02,0.26); st.rotation.x=-0.35; g.add(st); }
+  } else if(p.outfit==='baba'){
+    for(let i=0;i<3;i++) g.add(at(part(new THREE.SphereGeometry(0.03,8,6), 0xffe08a,{outline:0}), 0.05,0.98-i*0.15,0.31));
+    const col=part(new THREE.TorusGeometry(0.17,0.035,6,16), oc,{outline:0}); col.rotation.x=Math.PI/2; at(col,0,1.08,0); g.add(col);
+  } else if(p.outfit==='thun'){
+    const col=part(new THREE.TorusGeometry(0.15,0.03,6,16), 0xffffff,{outline:0}); col.rotation.x=Math.PI/2; at(col,0,1.08,0.02); g.add(col);
+    g.add(at(part(new THREE.SphereGeometry(0.08,10,8), 0xffcf4a,{outline:0.06}), 0,0.86,0.3));
+  } else if(p.outfit==='balo'){
+    for(const s of [-1,1]) g.add(at(part(new THREE.BoxGeometry(0.06,0.14,0.04), skin,{outline:0}), s*0.2,1.06,0.12));
+  }
+  // tay: tay áo theo kiểu áo
+  const sleeve = p.outfit==='baba' ? 'long' : (p.outfit==='balo' ? 'none' : 'short');
+  for(const s of [-1,1]){
+    const arm=new THREE.Group(); at(arm, s*0.38,1.0,0); arm.rotation.z=s*0.32;
+    if(s>0) arm.rotation.x=-0.7; // tay phải cầm ổ bánh mỳ
+    arm.add(at(part(new THREE.CapsuleGeometry(0.085,0.3,4,8), sleeve==='long'?oc:skin), 0,-0.2,0));
+    if(sleeve==='short') arm.add(at(part(new THREE.CylinderGeometry(0.11,0.12,0.16,10), shirt), 0,-0.06,0));
+    const hand=part(new THREE.SphereGeometry(0.095,10,8), skin); at(hand,0,-0.42,0); arm.add(hand);
+    if(s>0){ const b=part(new THREE.CapsuleGeometry(0.075,0.42,4,10), 0xe8a64a,{outline:0.07}); b.rotation.z=Math.PI/2; at(b,-0.05,-0.44,0.06); arm.add(b); }
+    g.add(arm);
+  }
+  // đầu + tai + mặt
+  g.add(at(part(new THREE.CylinderGeometry(0.1,0.12,0.12,10), skin), 0,1.1,0));
+  g.add(at(part(new THREE.SphereGeometry(HR,22,16), skin), 0,HY,0));
+  for(const s of [-1,1]) g.add(at(part(new THREE.SphereGeometry(0.08,10,8), skin), s*HR*0.98,HY,0));
+  eyes(g, HY+0.03, HR*0.84, 0.155, 0.095);
+  smile(g, HY-0.16, HR*0.93, 0.075, female?0xd0405a:0x5a1020);
+  blush(g, HY-0.09, HR*0.88, 0.26);
+  if(female) for(const s of [-1,1]){ const l=part(new THREE.BoxGeometry(0.07,0.022,0.02),0x111111,{outline:0}); at(l,s*0.25,HY+0.13,HR*0.86); l.rotation.z=-s*0.5; g.add(l); }
+  brows(g, HY+0.2, HR*0.9, 0.155, female?-0.08:0.1, hc, female?0.1:0.13);
+
+  // tóc
+  const capGeo=(r,th)=>new THREE.SphereGeometry(r,22,12,0,Math.PI*2,0,th);
+  const cap=part(capGeo(HR+0.025, p.hair==='dinh'?Math.PI*0.4:Math.PI*0.5), hc); at(cap,0,HY,0); cap.rotation.x=-0.28; g.add(cap);
+  if(p.hair==='ngan'){
+    for(const x of [-0.18,0,0.18]) g.add(at(part(new THREE.SphereGeometry(0.11,10,8), hc,{outline:0.04}), x,HY+0.3,0.27));
+  } else if(p.hair==='xoan'){
+    for(let i=0;i<12;i++){ const a=i/12*Math.PI*2; g.add(at(part(new THREE.SphereGeometry(0.12,10,8), hc,{outline:0.04}), Math.cos(a)*0.36,HY+0.2+Math.sin(i*1.7)*0.05,Math.sin(a)*0.36-0.04)); }
+    g.add(at(part(new THREE.SphereGeometry(0.16,10,8), hc), 0,HY+0.42,0));
+  } else if(p.hair==='bui'){
+    g.add(at(part(new THREE.SphereGeometry(0.17,12,10), hc), 0,HY+0.42,-0.22));
+    const pin=part(new THREE.CylinderGeometry(0.015,0.015,0.5,6), 0xffcf4a,{outline:0}); pin.rotation.z=1.2; at(pin,0,HY+0.44,-0.22); g.add(pin);
+  } else if(p.hair==='duoi'){
+    const t=part(new THREE.CapsuleGeometry(0.1,0.4,4,10), hc); at(t,0,HY-0.08,-0.47); t.rotation.x=0.35; g.add(t);
+    g.add(at(part(new THREE.SphereGeometry(0.07,8,6), oc,{outline:0}), 0,HY+0.15,-0.42));
+  } else if(p.hair==='dai'){
+    const back=part(new THREE.CapsuleGeometry(0.36,0.42,6,14), hc); back.scale.z=0.55; at(back,0,HY-0.25,-0.18); g.add(back);
+    for(const s of [-1,1]) g.add(at(part(new THREE.CapsuleGeometry(0.08,0.4,4,8), hc), s*0.38,HY-0.2,0.06));
+  }
+  // mũ
+  const top=HY+HR;
+  if(p.hat==='nonla'){
+    const n=part(new THREE.ConeGeometry(0.88,0.46,28), 0xe8c27a); at(n,0,top+0.06,0); g.add(n);
+    const ring=part(new THREE.TorusGeometry(0.62,0.015,4,28), 0xb88a3a,{outline:0}); ring.rotation.x=Math.PI/2; at(ring,0,top-0.02,0); g.add(ring);
+  } else if(p.hat==='bep'){
+    g.add(at(part(new THREE.CylinderGeometry(0.33,0.31,0.3,18), 0xffffff), 0,top-0.02,0));
+    for(const [x,z] of [[0,0],[-0.16,0.06],[0.16,0.06],[0,-0.14]]){ const pf=part(new THREE.SphereGeometry(0.22,12,10), 0xffffff,{outline:0.04}); pf.scale.y=0.8; at(pf,x,top+0.22,z); g.add(pf); }
+  } else if(p.hat==='baohiem'){
+    const h=part(new THREE.SphereGeometry(HR+0.07,22,12,0,Math.PI*2,0,Math.PI*0.52), oc); at(h,0,HY+0.02,0); h.rotation.x=-0.18; g.add(h);
+    g.add(at(part(new THREE.BoxGeometry(0.42,0.04,0.2), 0x222222,{outline:0.04}), 0,HY+0.26,HR+0.02));
+    g.add(at(part(new THREE.BoxGeometry(0.06,0.3,0.03), 0xffffff,{outline:0}), 0,HY+0.4,0.12));
+  } else if(p.hat==='khan'){
+    const band=new THREE.Mesh(new THREE.TorusGeometry(HR+0.02,0.065,8,28), new THREE.MeshToonMaterial({map:khanTexture(), gradientMap:gradMap}));
+    band.rotation.x=Math.PI/2-0.25; at(band,0,HY+0.2,0); g.add(band);
+    for(const s of [-1,1]){ const t=part(new THREE.BoxGeometry(0.08,0.24,0.03), 0x2a2024,{outline:0.05}); at(t,s*0.08,HY+0.05,-HR-0.06); t.rotation.z=s*0.4; g.add(t); }
+  }
+  g.userData.top = p.hat==='bep'?2.45 : p.hat==='nonla'?2.2 : 2.05;
+  return g;
+}
+
+/* ---------- Khung xem 3D trong màn tạo nhân vật ---------- */
+let preview=null;
+function openPreview(canvasEl){
+  closePreview();
+  const r=new THREE.WebGLRenderer({canvas:canvasEl, antialias:true, alpha:true, preserveDrawingBuffer:true});
+  r.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); r.outputColorSpace=THREE.SRGBColorSpace;
+  const sc=new THREE.Scene();
+  sc.add(new THREE.HemisphereLight(0xffe4d6,0x40182a,1.35));
+  const key=new THREE.DirectionalLight(0xffecd8,1.7); key.position.set(2,4,5); sc.add(key);
+  const rim=new THREE.DirectionalLight(0xff6a2a,1.4); rim.position.set(-3,2,-4); sc.add(rim);
+  const disc=part(new THREE.CylinderGeometry(0.85,0.9,0.1,32), 0x5a2438,{outline:0.03}); at(disc,0,-0.05,0); sc.add(disc);
+  const cam=new THREE.PerspectiveCamera(30,1,0.1,50);
+  const pv={r, sc, cam, model:null, yaw:0.5, spin:0.6, drag:null, raf:0, t:0, last:performance.now()};
+  const fit=()=>{ const w=canvasEl.clientWidth||200, h=canvasEl.clientHeight||200; r.setSize(w,h,false); cam.aspect=w/h;
+    const dist = 5.4/Math.min(1,cam.aspect*1.15); cam.position.set(0,1.3,dist); cam.lookAt(0,1.12,0); cam.updateProjectionMatrix(); };
+  pv.fit=fit; fit();
+  canvasEl.addEventListener('pointerdown',e=>{ pv.drag={x:e.clientX,yaw:pv.yaw}; pv.spin=0; canvasEl.setPointerCapture?.(e.pointerId); });
+  canvasEl.addEventListener('pointermove',e=>{ if(pv.drag) pv.yaw=pv.drag.yaw+(e.clientX-pv.drag.x)*0.012; });
+  const up=()=>{ if(pv.drag){ pv.drag=null; pv.spin=0.35; } };
+  canvasEl.addEventListener('pointerup',up); canvasEl.addEventListener('pointercancel',up);
+  const loop=now=>{ const dt=Math.min(0.05,(now-pv.last)/1000); pv.last=now; pv.t+=dt;
+    if(!pv.drag) pv.yaw+=pv.spin*dt;
+    if(pv.model){ pv.model.rotation.y=pv.yaw; pv.model.position.y=Math.abs(Math.sin(pv.t*2.2))*0.04; }
+    r.render(sc,cam); pv.raf=requestAnimationFrame(loop); };
+  pv.raf=requestAnimationFrame(loop);
+  preview=pv; return pv;
+}
+function setPreviewModel(p){
+  if(!preview) return;
+  if(preview.model) preview.sc.remove(preview.model);
+  preview.model=buildPlayer(p); preview.sc.add(preview.model); pop(preview.model);
+}
+function snapshotPortrait(p){
+  // chụp ảnh chân dung (nửa người, nhìn thẳng) để dùng trên HUD và trong hoạt cảnh
+  try{
+    const cv=document.createElement('canvas'); cv.width=cv.height=192;
+    const r=preview?.r; if(!r) return '';
+    const m=buildPlayer(p); const sc=preview.sc; const old=preview.model; if(old) old.visible=false; sc.add(m);
+    const cam=new THREE.PerspectiveCamera(30,1,0.1,50); cam.position.set(0.25,1.75,3.6); cam.lookAt(0,1.2,0);
+    const size=r.getSize(new THREE.Vector2()), pr=r.getPixelRatio();
+    r.setPixelRatio(1); r.setSize(192,192,false); r.render(sc,cam);
+    const url=r.domElement.toDataURL('image/png');
+    r.setPixelRatio(pr); r.setSize(size.x,size.y,false);
+    sc.remove(m); if(old) old.visible=true; preview.fit();
+    return url;
+  }catch(e){ return ''; }
+}
+function closePreview(){
+  if(!preview) return;
+  cancelAnimationFrame(preview.raf);
+  try{ preview.r.dispose(); preview.r.forceContextLoss(); }catch(e){}
+  preview=null;
+}
+
+/* ---------- Áp dụng hồ sơ vào game: biển hiệu + HUD ---------- */
+function signTexture(text){
+  const w=768,h=128, cv=document.createElement('canvas'); cv.width=w; cv.height=h; const g=cv.getContext('2d');
+  g.fillStyle='#d8301c'; g.fillRect(0,0,w,h); g.strokeStyle='#ffcf4a'; g.lineWidth=8; g.strokeRect(10,10,w-20,h-20);
+  let fs=64; g.font=`800 ${fs}px "Baloo 2", sans-serif`;
+  while(g.measureText(text).width>w-60 && fs>26){ fs-=2; g.font=`800 ${fs}px "Baloo 2", sans-serif`; }
+  g.fillStyle='#fff6e4'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(text,w/2,h/2+4);
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; return t;
+}
+function applyPlayer(){
+  if(cartSign && player?.name){
+    const old=cartSign.material.map; cartSign.material.map=signTexture('BÁNH MỲ '+player.name.toLocaleUpperCase('vi')); cartSign.material.needsUpdate=true; old?.dispose();
+  }
+  const money=document.getElementById('money');
+  let av=document.getElementById('meAv');
+  if(player?.portrait){
+    if(!av){ av=document.createElement('img'); av.id='meAv'; av.alt=''; money.prepend(av); }
+    av.src=player.portrait; money.title=player.name;
+    let nm=document.getElementById('meName'); if(!nm){ nm=document.createElement('span'); nm.id='meName'; av.after(nm); } nm.textContent=player.name+' ·';
+  } else { av?.remove(); document.getElementById('meName')?.remove(); }
+}
+function savePlayer(p){ player=p; store.set(PLAYER_KEY,p); applyPlayer(); }
+
+/* ---------- Màn "Sổ Sinh Tử": chọn tên + ngoại hình ---------- */
+function openCreator({done, intro=false}={}){
+  state.phase='intro';
+  const p=Object.assign(defaultProfile(), player||{});
+  const swatches=(key,cols)=>cols.map((c,i)=>`<button class="sw" data-k="${key}" data-v="${i}" style="background:${plHex(c)}" aria-label="${key} ${i+1}"></button>`).join('');
+  const chips=(key,list)=>list.map(([v,l])=>`<button class="chip" data-k="${key}" data-v="${v}">${l}</button>`).join('');
+  showCard(`
+    <h2>📜 Sổ Sinh Tử</h2>
+    <p style="margin:0">${intro?'Phán Quan chấm bút lông, chờ bạn khai danh tính.':'Sửa lại tên và ngoại hình chủ xe.'}</p>
+    <div class="cc">
+      <div><canvas id="ccView"></canvas><div class="ccHint">Kéo để xoay nhân vật</div></div>
+      <div>
+        <div class="opt"><b>Tên chủ xe</b><div class="ccName"><input id="ccName" maxlength="16" autocomplete="off" enterkeyhint="done" placeholder="VD: ${plEsc(plPick(NAME_IDEAS))}" value="${plEsc(p.name)}"><button class="chip" id="ccDice" title="Gợi ý tên">🎲</button></div></div>
+        <div class="opt"><b>Dáng người</b><div class="chips">${chips('body',PL.body)}</div></div>
+        <div class="opt"><b>Màu da</b><div class="chips">${swatches('skin',PL.skin)}</div></div>
+        <div class="opt"><b>Kiểu tóc</b><div class="chips">${chips('hair',PL.hair)}</div></div>
+        <div class="opt"><b>Màu tóc</b><div class="chips">${swatches('hairColor',PL.hairColor)}</div></div>
+        <div class="opt"><b>Trang phục</b><div class="chips">${chips('outfit',PL.outfit)}</div></div>
+        <div class="opt"><b>Màu áo</b><div class="chips">${swatches('color',PL.color)}</div></div>
+        <div class="opt"><b>Mũ nón</b><div class="chips">${chips('hat',PL.hat)}</div></div>
+      </div>
+    </div>
+    <button class="big" id="ccOk">${intro?'Ghi vào sổ ✍️':'Lưu ✍️'}</button>
+    <div class="navrow" style="justify-content:center;gap:18px"><button class="skip" id="ccRand">🎲 Ngẫu nhiên tất cả</button>${intro?'':'<button class="skip" id="ccBack">Quay lại</button>'}</div>`);
+  card.classList.add('wide');
+  const nameEl=document.getElementById('ccName');
+  const refresh=()=>{
+    card.querySelectorAll('[data-k]').forEach(b=>b.classList.toggle('on', String(p[b.dataset.k])===b.dataset.v));
+    setPreviewModel(p);
+  };
+  card.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k; p[k]= (k==='skin'||k==='hairColor'||k==='color') ? +b.dataset.v : b.dataset.v;
+    if(k==='body' && b.dataset.v==='nu' && (p.hair==='dinh')) p.hair='duoi';
+    sfx.add(); refresh();
+  });
+  nameEl.oninput=()=>{ p.name=nameEl.value; };
+  nameEl.onkeydown=e=>{ if(e.key==='Enter') nameEl.blur(); };
+  document.getElementById('ccDice').onclick=()=>{ nameEl.value=p.name=plPick(NAME_IDEAS.filter(n=>n!==p.name)); sfx.add(); };
+  document.getElementById('ccRand').onclick=()=>{ Object.assign(p, randomProfile()); nameEl.value=p.name; sfx.bell(); refresh(); };
+  const back=document.getElementById('ccBack'); if(back) back.onclick=()=>{ closePreview(); card.classList.remove('wide'); titleScreen(); };
+  document.getElementById('ccOk').onclick=()=>{
+    p.name=(nameEl.value||'').replace(/\s+/g,' ').trim().slice(0,16);
+    if(!p.name){ p.name=plPick(NAME_IDEAS); nameEl.value=p.name; toast(`Chưa có tên, Phán Quan ghi đại là “${p.name}”`); }
+    p.portrait=snapshotPortrait(p);
+    savePlayer({...p});
+    sfx.ok(); closePreview(); card.classList.remove('wide');
+    done?.();
+  };
+  openPreview(document.getElementById('ccView'));
+  refresh();
+}
+function ensurePlayer(next){ if(player?.name) next(); else openCreator({intro:true, done:next}); }
+
+/* ---------- Hoạt cảnh cốt truyện ---------- */
+const AV_SIL = '<span class="sil">🧑‍🍳</span>';
+const avImg = () => player?.portrait ? `<img class="av" src="${player.portrait}" alt="">` : '<span>🧑‍🍳</span>';
+const STORY_A = () => [
+  {bg:'city', art:`<span class="bg">🏙️</span><span class="bob sm">🌕</span>${AV_SIL}<span>🥖</span><span class="sm">🏮</span>`, who:'Sài Gòn · Rằm tháng Bảy',
+   text:'Bạn là chủ một xe bánh mỳ nhỏ đầu hẻm, nổi tiếng giòn rụm cả quận. Đêm nay là Rằm tháng Bảy, ngày xá tội vong nhân.'},
+  {bg:'city', art:`<span class="shake">📱</span><span class="sm bob">💬</span>`, who:'🔔 Có đơn hàng mới!', sfx:'bell',
+   text:'Gần nửa đêm, điện thoại reo: “100 ổ bánh mỳ, giao tới Hẻm 18, Tầng 18. Trả bằng vàng, bao nhiêu cũng được.”'},
+  {bg:'fog', art:`<span class="bg">🌫️</span><span class="sm">🏮</span>${AV_SIL}<span class="shake">🛒</span><span class="sm">💨</span>`, who:'',
+   text:'Bạn đẩy xe theo bản đồ. Sương mù mỗi lúc một dày, đèn lồng đỏ treo kín hai bên đường… Bản đồ báo: “Bạn đã đến nơi”. RẦM!', sfx:'bad'},
+  {bg:'hell', art:`<span class="bg">⛩️</span><span class="bob">🐮</span><span class="sm">🥖🥖</span><span class="bob">🐴</span>`, who:'Quỷ Môn Quan', sfx:'gong',
+   text:'Bạn tỉnh dậy trước một cánh cổng rực lửa. Ngưu Đầu và Mã Diện đang ngồi gặm sạch 100 ổ bánh của bạn, vừa ăn vừa khen “ngon hơn cháo Mạnh Bà”.'},
+  {bg:'court', art:`<span class="zoom">📜</span><span class="sm bob">🖌️</span><span class="sm">🔥</span>`, who:'Phán Quan',
+   text:'“Kẻ kia! Sổ Sinh Tử bị dính sốt pate, ta đọc không ra. Khai mau: tên họ là gì, mặt mũi ra sao?”', btn:'Khai danh tính ✍️'},
+];
+const STORY_B = () => { const n=plEsc(player?.name||'ngươi'); return [
+  {bg:'court', art:`<span class="sm">📜</span>${avImg()}<span class="sm bob">❗</span>`, who:'Phán Quan',
+   text:`“${n}… Ồ! Dương thọ của ngươi còn tận 60 năm. Hắc Bạch Vô Thường lại bắt nhầm người rồi!”`},
+  {bg:'hell', art:`<span class="bob">👑</span><span class="sm">😋</span><span>🥖</span>`, who:'Diêm Vương', sfx:'gong',
+   text:'“Muốn hoàn dương thì phải mua Vé Hoàn Dương, đắt lắm đấy. Nhưng mà… bánh mỳ của ngươi ngon quá. Ta cấp phép cho ngươi mở xe ngay trước Quỷ Môn Quan!”'},
+  {bg:'hell', art:`<span class="sm">👺</span>${avImg()}<span class="sm shake">💰</span>`, who:'Quỷ Sai',
+   text:`“Tiền thuê chỗ trả mỗi đêm. Nợ ba đêm liền là ta tịch thu xe. Bán cho tốt vào, ${n}!”`},
+  {bg:'hell', art:`<span class="bg">⛩️</span>${avImg()}<span class="bob">🥖</span><span class="sm">✨</span>`, who:'',
+   text:`Thế là xe “Bánh Mỳ ${n}” chính thức khai trương nơi âm phủ. Kiếm thật nhiều vàng mã, giữ danh tiếng… và một ngày nào đó, về nhà!`, btn:'Mở hàng đêm 1 ▶'},
+];};
+let storyTimer=0;
+function playStory(pages, onDone, {skipTo}={}){
+  state.phase='intro';
+  let i=0, typing=false, full='';
+  const finish=()=>{ clearInterval(storyTimer); typing=false; const s=document.getElementById('say'); if(s) s.textContent=full; };
+  const end=()=>{ clearInterval(storyTimer); (skipTo||onDone)(); };
+  const show=()=>{
+    const pg=pages[i]; full=pg.text;
+    showCard(`
+      <div class="scene-art ${pg.bg}" id="art">${pg.art}</div>
+      <div class="speaker">${pg.who}</div>
+      <div class="say" id="say"></div>
+      <div class="dots">${pages.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>
+      <div class="navrow"><button class="big" id="stNext">${pg.btn||'Tiếp ▶'}</button><button class="skip" id="stSkip">Bỏ qua ⏭</button></div>`);
+    if(pg.sfx) sfx[pg.sfx]();
+    const say=document.getElementById('say'); let c=0; typing=true; const chars=[...full];
+    clearInterval(storyTimer);
+    storyTimer=setInterval(()=>{ c+=2; say.textContent=chars.slice(0,c).join(''); if(c>=chars.length) finish(); },28);
+    const adv=()=>{ if(typing){ finish(); return; } if(++i<pages.length) show(); else { clearInterval(storyTimer); onDone(); } };
+    document.getElementById('stNext').onclick=adv;
+    say.onclick=adv; document.getElementById('art').onclick=adv;
+    document.getElementById('stSkip').onclick=end;
+  };
+  show();
+}
+function beginNewGame(){
+  const afterCreate=()=>playStory(STORY_B(), startNight);
+  playStory(STORY_A(), ()=>openCreator({intro:true, done:afterCreate}),
+    {skipTo:()=>openCreator({intro:true, done:startNight})});
+}
+
+/* ---------- Gắn vào màn hình chính ---------- */
+function playerTitleHtml(){
+  if(!player?.name) return '';
+  return `<div class="meline">${player.portrait?`<img src="${player.portrait}" alt="">`:'🧑‍🍳'}<span>Chủ xe: ${plEsc(player.name)}</span><button class="linkbtn" id="editMe">✏️ Đổi</button></div>`;
+}
+function bindPlayerTitle(){
+  const b=document.getElementById('editMe'); if(b) b.onclick=()=>openCreator({done:titleScreen});
+}
+applyPlayer();
 
 /* =========================================================
    VÒNG LẶP CHÍNH
