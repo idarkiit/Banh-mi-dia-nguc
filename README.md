@@ -8,7 +8,9 @@ Game 3D hoạt hình chạy ngay trên trình duyệt: bạn khởi nghiệp v�
 2. Chạm nguyên liệu (Nhân, Rau, Sốt) để kẹp bánh.
 3. Chạm vào khách hoặc bong bóng order để giao bánh.
 
-Giao nhanh được nhiều tip, giao đúng liên tiếp có combo. Sai món hoặc để khách chờ lâu thì danh tiếng giảm. Hết mỗi đêm phải trả tiền thuê chỗ cho Quỷ Sai. Danh tiếng về 0 hoặc nợ 3 đêm liền là thua.
+Mỗi đêm dài 2 phút. Giao nhanh được nhiều tip, giao đúng liên tiếp có combo. Sai món hoặc để khách chờ lâu thì danh tiếng giảm. Hết mỗi đêm phải trả tiền thuê chỗ cho Quỷ Sai (tăng dần: 25, 50, 85, 130, 185...), rồi vào cửa hàng dùng vàng mã mua nguyên liệu mới và nâng cấp xe. Danh tiếng về 0 hoặc nợ 3 đêm liền là thua.
+
+Khách đặc biệt: Ngạ quỷ gọi 2 ổ, Hắc Bạch Vô Thường đi cùng nhau (giao đủ cả hai mới được thưởng), Mạnh Bà tặng Cháo Lãng Quên để tha một lần sai món.
 
 ## Chạy thử
 
