@@ -6,5 +6,7 @@
   "compatibility_date": "2026-11-08",
   "assets": {
     "directory": "."
-  }
+  },
+  // bản xem trước cho từng PR (lệnh `npx wrangler preview` của Workers Builds cần khối này, để trống cũng được)
+  "previews": {}
 }
