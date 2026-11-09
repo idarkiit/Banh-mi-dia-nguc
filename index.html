@@ -1264,6 +1264,7 @@ function createCustomer({type, def, name, build, prefs, slot, count=1, pat}){
   const cu={type, def, name, mesh, slot, sx:slotScale, orders, served:orders.map(()=>false), pat, st:'walk', t:Math.random()*10, blinkT:rnd(1,4), from:mesh.position.clone(), walkT:0};
   if(def.mystery) cu.secret = MYSTERY[urlQ.get('mystery')] ? urlQ.get('mystery') : pick(Object.keys(MYSTERY));
   slot.busy=cu; markSeen(type);
+  if(def.model) state.realShown=true;
   const b=document.createElement('div'); b.className='bubble'; b.style.opacity='0';
   b.addEventListener('pointerdown',e=>{ e.stopPropagation(); serve(cu); });
   bubblesEl.appendChild(b); cu.bubble=b;
@@ -1291,6 +1292,8 @@ function spawnCustomer(forced){
   }
   const newest=types.filter(k=>CUST[k].night===Math.min(state.night,4));
   let type = forced || (Math.random()<0.35 && newest.length ? pick(newest) : pick(types));
+  // khách model thật: bảo đảm xuất hiện ít nhất một lần mỗi đêm (ngay khi model tải xong)
+  if(!forced && !state.realShown && types.includes('quytuong')) type='quytuong';
   // Hắc Bạch Vô Thường luôn đi cùng nhau: cần 2 chỗ liền kề
   if(CUST[type].pair){
     const pairs=[[0,1],[1,2]].filter(([a,b])=>!SLOTS[a].busy&&!SLOTS[b].busy);
@@ -1496,7 +1499,7 @@ function titleScreen(){
 }
 function startNight(){
   sfx.gong();
-  shopBuys={ing:[],upg:[]};
+  shopBuys={ing:[],upg:[]}; state.realShown=false;
   for(const cu of [...customers]) removeCustomer(cu);
   SLOTS.forEach(s=>s.busy=null); QSLOTS.forEach(s=>s.busy=null);
   Object.assign(state,{phase:'play', timeLeft:NIGHT_LEN, spawnT:1.5, closing:false, closeT:0, combo:0});
@@ -3126,7 +3129,7 @@ function tick(){
   requestAnimationFrame(tick);
 }
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) clock.getDelta(); });
-if(new URLSearchParams(location.search).has('debug')) window.__bmdn = {state, customers, ING, UPG, CUST, spawn:spawnCustomer, refreshUpgrades, buildButtons, startChaseEvent, closeShop, gameOver, settingsScreen, Music, audioCfg, takeBread, almanacScreen, QSLOTS, SLOTS, seen, ICON, beginNewGame, startNight, shopScreen, addIngredient, serve, get C(){return C;}, get CUT(){return CUT;}}; // chỉ dùng khi kiểm thử
+if(new URLSearchParams(location.search).has('debug')) window.__bmdn = {state, customers, ING, UPG, CUST, spawn:spawnCustomer, refreshUpgrades, buildButtons, startChaseEvent, closeShop, gameOver, settingsScreen, Music, audioCfg, takeBread, almanacScreen, QSLOTS, SLOTS, seen, ICON, beginNewGame, startNight, shopScreen, REAL, addIngredient, serve, get C(){return C;}, get CUT(){return CUT;}}; // chỉ dùng khi kiểm thử
 
 buildIcons();
 resize(); resetBread(); updateHud(); refreshUpgrades();
